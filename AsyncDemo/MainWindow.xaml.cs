@@ -38,9 +38,16 @@ namespace AsyncDemo
             resultsWindow.Text += $"Total execution time: { elapsedMs }";
         }
 
-        private void executeAsync_Click(object sender, RoutedEventArgs e)
+        private async void executeAsync_Click(object sender, RoutedEventArgs e)
         {
+            var watch = System.Diagnostics.Stopwatch.StartNew();
 
+            await RunDownloadParallelAsync();
+
+            watch.Stop();
+            var elapsedMs = watch.ElapsedMilliseconds;
+
+            resultsWindow.Text += $"Total execution time: { elapsedMs }";
         }
 
         private List<string> PrepData()
@@ -57,6 +64,35 @@ namespace AsyncDemo
             output.Add("https://www.stackoverflow.com");
 
             return output;
+        }
+
+        private async Task RunDownloadAsync()
+        {
+            List<string> websites = PrepData();
+
+            foreach (var site in websites)
+            {
+                WebSiteDataModel results = await Task.Run(() => DownloadWebSite(site));
+                ReportWebSiteInfo(results);
+            }
+        }
+
+        private async Task RunDownloadParallelAsync()
+        {
+            List<string> websites = PrepData();
+            List<Task<WebSiteDataModel>> tasks = new List<Task<WebSiteDataModel>>();
+
+            foreach (var site in websites)
+            {
+                tasks.Add(Task.Run(() => DownloadWebSite(site)));
+            }
+
+            var results = await Task.WhenAll(tasks);
+
+            foreach (var item in results)
+            {
+                ReportWebSiteInfo(item);
+            }
         }
 
         private void RunDownloadSync()
